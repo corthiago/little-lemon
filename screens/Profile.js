@@ -73,7 +73,8 @@ export default function Profile({navigation}) {
     try {
       await AsyncStorage.setItem("profileData", JSON.stringify(profileData));
       console.log(JSON.stringify(profileData))
-      alert("Changes saved successfully!");
+      // alert("Changes saved successfully!");
+      navigation.navigate('Home');
     } catch (err) {
       console.log("Error saving data:", err);
     }
