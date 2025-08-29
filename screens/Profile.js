@@ -8,208 +8,150 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
-import Checkbox from "expo-checkbox";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {MaskedTextInput} from 'react-native-mask-text';
-import * as ImagePicker from "expo-image-picker";
+import { MaskedTextInput } from 'react-native-mask-text';
+import { storage } from "../utils/storage";
+import Check from "../components/Check";
+import Avatar from "../components/Avatar";
 
 export default function Profile({navigation}) {
-  const [avatarUri, setAvatarUri] = useState(null);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [profileData, setProfileData] = useState({
+    avatarUri: null,
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    preferences: {
+      orderStatuses: false,
+      passwordChanges: false,
+      specialOffers: false,
+      newsletter: false
+    }
+  });
 
-  const [orderStatuses, setOrderStatuses] = useState(true);
-  const [passwordChanges, setPasswordChanges] = useState(true);
-  const [specialOffers, setSpecialOffers] = useState(true);
-  const [newsletter, setNewsletter] = useState(true);
+  const updateField = (field, value) => {
+    setProfileData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }
+
+  const updatePreferences = (key, value) => {
+    setProfileData(prev => ({
+      ...prev,
+      preferences: {
+        ...prev.preferences,
+        [key]: value
+      }
+    }))
+  }
+
+  const handleSave = async () => {
+    try {
+      await storage.saveProfile(profileData);
+      navigation.navigate('Home');
+    } catch (error) {
+      alert('Failed to save changes', error);
+      console.error(error)
+    }
+  };
+
+  useEffect(()=>{
+    const loadProfile = async () => {
+      try {
+        const saved = await storage.getProfile();
+        if(saved) {
+          setProfileData(saved)
+        }
+      } catch(error) {
+        console.error('Failed to load profile', error)
+      }
+    }
+    loadProfile()
+  }, [])
 
   const isValidUSPhone = (value) => {
     const digits = value.replace(/\D/g, "");
     return /^\d{10}$/.test(digits);
   };
 
-  const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      alert("Permission to access gallery is required!");
-      return;
-    }
-
-    // Launch picker
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1], // square crop
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      setAvatarUri(result.assets[0].uri);
-    }
-  };
-
-  const getInitials = () => {
-    const firstInitial = firstName?.charAt(0).toUpperCase() || "";
-    const lastInitial = lastName?.charAt(0).toUpperCase() || "";
-    return `${firstInitial}${lastInitial}`;
-  };
-
-  // Save all data
-  const saveChanges = async () => {
-    const profileData = {
-      avatarUri,
-      firstName,
-      lastName,
-      email,
-      phone,
-      orderStatuses,
-      passwordChanges,
-      specialOffers,
-      newsletter,
-    };
-
-    try {
-      await AsyncStorage.setItem("profileData", JSON.stringify(profileData));
-      console.log(JSON.stringify(profileData))
-      // alert("Changes saved successfully!");
-      navigation.navigate('Home');
-    } catch (err) {
-      console.log("Error saving data:", err);
-    }
-  };
-
   const handleLogout = async () => {
     try {
-      await AsyncStorage.clear(); // Remove all saved data
+      await storage.clearAll();
       navigation.reset({
         index: 0,
-        routes: [{ name: "Onboarding" }], // Go to Onboarding and clear history
+        routes: [{ name: "Onboarding" }],
       });
-    } catch (err) {
-      console.log("Error clearing data:", err);
+    } catch(error) {
+      alert('Failed to logout');
+      console.error(error);
     }
-  };
-
-  useEffect(()=>{
-    (async () => {
-      try {
-        const jsonValue = await AsyncStorage.getItem('userData')
-        if (jsonValue != null) {
-          const userData = JSON.parse(jsonValue);
-          setFirstName(userData.firstName)
-          setEmail(userData.email)
-        }
-      } catch(error) {
-        console.error('Error reading user data:', error)
-      }
-    })()
-  })
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const storedData = await AsyncStorage.getItem("profileData");
-        if (storedData) {
-          const parsed = JSON.parse(storedData);
-          setAvatarUri(parsed.avatarUri || null);
-          setFirstName(parsed.firstName || "");
-          setLastName(parsed.lastName || "");
-          setEmail(parsed.email || "");
-          setPhone(parsed.phone || "");
-          setOrderStatuses(parsed.orderStatuses ?? true);
-          setPasswordChanges(parsed.passwordChanges ?? true);
-          setSpecialOffers(parsed.specialOffers ?? true);
-          setNewsletter(parsed.newsletter ?? true);
-        }
-      } catch (err) {
-        console.log("Error loading data:", err);
-      }
-    })();
-  }, []);
+  }
 
   return (
     <ScrollView style={styles.container}>
-
-      {/* Section title */}
       <Text style={styles.sectionTitle}>Personal information</Text>
 
-      <View style={styles.avatarRow}>
-        {avatarUri ? (
-          <Image source={{ uri: avatarUri }} style={styles.avatar} />
-        ) : (
-          <View style={styles.initialsCircle}>
-            <Text style={styles.initialsText}>{getInitials()}</Text>
-          </View>
-        )}
+      <Avatar 
+        uri={profileData.avatarUri}
+        onChangeImage={(value) => updateField('avatarUri', value)}
+        onRemoveImage={() => updateField('avatarUri', null)}
+      />
 
-        <TouchableOpacity style={styles.changeButton} onPress={pickImage}>
-          <Text style={styles.changeButtonText}>Change</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.removeButton}
-          onPress={() => setAvatarUri(null)}
-        >
-          <Text style={styles.removeButtonText}>Remove</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Inputs */}
       <TextInput
         style={styles.input}
-        value={firstName}
-        onChangeText={setFirstName}
+        value={profileData.firstName}
+        onChangeText={(value) => updateField('firstName', value)}
         placeholder="First name"
       />
       <TextInput
         style={styles.input}
-        value={lastName}
-        onChangeText={setLastName}
+        value={profileData.lastName}
+        onChangeText={(value) => updateField('lastName', value)}
         placeholder="Last name"
       />
       <TextInput
         style={styles.input}
-        value={email}
-        onChangeText={setEmail}
+        value={profileData.email}
+        onChangeText={(value) => updateField('email', value)}
         placeholder="Email"
       />
 
       <MaskedTextInput
-        value={phone}
+        value={profileData.phone}
         onChangeText={(masked, unmasked) => {
-          setPhone(masked); // masked = (217) 555-0113
+          updateField('phone', masked); // masked = (217) 555-0113
         }}
         mask="(999) 999-9999"
         keyboardType="phone-pad"
         placeholder="(217) 555-0113"
         style={[
-          styles.input2,
-          phone && !isValidUSPhone(phone) && { borderColor: "red" },
+          styles.inputPhone,
+          profileData.phone && !isValidUSPhone(profileData.phone) && { borderColor: "red" },
         ]}
       />
 
-      {/* Email Notifications */}
       <Text style={styles.subTitle}>Email notifications</Text>
-      <View style={styles.checkboxRow}>
-        <Checkbox value={orderStatuses} onValueChange={setOrderStatuses} />
-        <Text>Order statuses</Text>
-      </View>
-      <View style={styles.checkboxRow}>
-        <Checkbox value={passwordChanges} onValueChange={setPasswordChanges} />
-        <Text>Password changes</Text>
-      </View>
-      <View style={styles.checkboxRow}>
-        <Checkbox value={specialOffers} onValueChange={setSpecialOffers} />
-        <Text>Special offers</Text>
-      </View>
-      <View style={styles.checkboxRow}>
-        <Checkbox value={newsletter} onValueChange={setNewsletter} />
-        <Text>Newsletter</Text>
-      </View>
+      <Check 
+        value={profileData.preferences?.orderStatuses}
+        onValueChange={(value) => updatePreferences('orderStatuses', value)}
+        label='Order Statuses'
+      />
+      <Check 
+        value={profileData.preferences?.passwordChanges}
+        onValueChange={(value) => updatePreferences('passwordChanges', value)}
+        label='Password Changes'
+      />
+      <Check 
+        value={profileData.preferences?.specialOffers}
+        onValueChange={(value) => updatePreferences('specialOffers', value)}
+        label='Special Offers'
+      />
+      <Check 
+        value={profileData.preferences?.newsletter}
+        onValueChange={(value) => updatePreferences('newsletter', value)}
+        label='Newsletter'
+      />
 
-      {/* Buttons */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Log out</Text>
       </TouchableOpacity>
@@ -218,7 +160,7 @@ export default function Profile({navigation}) {
         <TouchableOpacity style={styles.discardButton}>
           <Text style={styles.discardText}>Discard changes</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.saveButton} onPress={saveChanges}>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
           <Text style={styles.saveText}>Save changes</Text>
         </TouchableOpacity>
       </View>
@@ -228,16 +170,6 @@ export default function Profile({navigation}) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: "#fff" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
-  },
-  backButton: { padding: 5 },
-  backArrow: { fontSize: 24 },
-  logo: { width: 40, height: 40, resizeMode: "contain" },
-  profileIcon: { width: 40, height: 40, borderRadius: 20 },
   sectionTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 15 },
   avatarRow: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
   avatar: { width: 60, height: 60, borderRadius: 30, marginRight: 10 },
@@ -292,7 +224,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   saveText: { color: "#fff" },
-  input2: {
+  inputPhone: {
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 8,

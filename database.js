@@ -1,3 +1,26 @@
+export const initDb = async (db) => {
+    try {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS menu (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          description TEXT,
+          price TEXT,
+          image TEXT
+        );
+      `);
+
+      const result = await db.getAllAsync("SELECT * FROM menu");
+      
+      if (result.length > 0) {
+        console.log('Clearing database table...');
+        await db.runAsync("DELETE FROM menu");
+      } 
+    } catch (err) {
+      console.error("DB Init Error:", err);
+    }
+  };
+
 export const queryByCategories = async (db, activeCategories) => {
     try {
         const lowerCaseCategories = activeCategories.map((cat)=>cat.toLowerCase())
@@ -17,13 +40,11 @@ export const queryByCategoriesAndSearch = async (db, activeCategories, searchTer
         let query = 'SELECT * FROM menu WHERE 1=1';
         let params = [];
 
-        // Add category filter if categories are selected
         if (activeCategories.length > 0) {
             query += ` AND LOWER(category) IN (${activeCategories.map(() => '?').join(', ')})`;
             params = [...params, ...lowerCaseCategories];
         }
 
-        // Add search term filter if search is provided
         if (searchTerm) {
             query += ' AND LOWER(name) LIKE ?';
             params.push(`%${searchTerm.toLowerCase()}%`);

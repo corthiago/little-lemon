@@ -1,11 +1,15 @@
 import { useState } from 'react';
-import { View, Text, Button, TextInput, Alert, StyleSheet, Image, Pressable } from 'react-native'
+import { View, Text, Button, TextInput, Alert, StyleSheet, Image, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
 import logo from '../assets/little-lemon-logo-grey.png'
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const Onboarding = ({navigation}) => {
+const Onboarding = () => {
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
+
+  const navigation = useNavigation();
 
   const handlePress = async () => {
     if(!validadeName(firstName)){
@@ -18,13 +22,16 @@ const Onboarding = ({navigation}) => {
     }
 
     try {
-      const userData = {
+      const profileData = {
         firstName,
         email,
-        isOnboarded: true
+        isOnboardingCompleted: true
       };
-      await AsyncStorage.setItem('userData', JSON.stringify(userData));
-      navigation.navigate('Profile')
+
+      await AsyncStorage.setItem('profileData', JSON.stringify(profileData));
+      
+      navigation.navigate("Home")
+      
     } catch (error) {
       Alert.alert('Error', 'Could not save your information');
       console.error(error);
@@ -45,43 +52,52 @@ const Onboarding = ({navigation}) => {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerText}>Little Lemon</Text>
-        <Image source={logo} resizeMode='contain' style={styles.logo}/>
-      </View>
-      <View style={[styles.section]}>
-        <Text style={styles.headingText}>Let us get to know you</Text>
-        <Text style={styles.inputTitle}>First Name</Text>
-        <TextInput
-          style={styles.inputText}
-          onChangeText={setFirstName}
-          value={firstName}
-        />
-        <Text style={styles.inputTitle}>Email</Text>
-        <TextInput
-          style={styles.inputText}
-          onChangeText={setEmail}
-          value={email}
-          keyboardType='email-address'
-          autoCapitalize='none'
-        />
-      </View>
-      <View style={styles.footer}>
-        <Pressable
-          style={styles.button}
-          title='next'
-          onPress={handlePress}
-          disabled={isButtonDisabled()}
-        >
-          <Text style={styles.buttonText}>Next</Text>
-        </Pressable>
-      </View>
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={styles.header}>
+          <Text style={styles.headerText}>Little Lemon</Text>
+          <Image source={logo} resizeMode='contain' style={styles.logo}/>
+        </View>
+        <View style={[styles.section]}>
+          <Text style={styles.headingText}>Let us get to know you</Text>
+          <Text style={styles.inputTitle}>First Name</Text>
+          <TextInput
+            style={styles.inputText}
+            onChangeText={setFirstName}
+            value={firstName}
+          />
+          <Text style={styles.inputTitle}>Email</Text>
+          <TextInput
+            style={styles.inputText}
+            onChangeText={setEmail}
+            value={email}
+            keyboardType='email-address'
+            autoCapitalize='none'
+          />
+        </View>
+        <View style={styles.footer}>
+          <Pressable
+            style={[styles.button, isButtonDisabled() && styles.buttonDisabled]}
+            title='next'
+            onPress={handlePress}
+            disabled={isButtonDisabled()}
+          >
+            <Text style={styles.buttonText}>Next</Text>
+          </Pressable>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#edefee'
+  },
   container: {
     flex: 1
   },
@@ -115,7 +131,7 @@ const styles = StyleSheet.create({
   },
   inputTitle: {
     fontSize: 22,
-    padding: 10,
+    padding: 6,
     color: '#edefee',
   },
   inputText: {
@@ -123,9 +139,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f4ce14',
     width: 300,
-    fontSize: 30,
-    color: '#333333',
-    marginBottom: 10
+    fontSize: 18,
+    color: '#FFF',
+    marginBottom: 10,
+    padding: 6
   },
   footer: {
     flex:1 ,
@@ -146,6 +163,9 @@ const styles = StyleSheet.create({
     color: '#edefee',
     fontWeight: 'bold',
     paddingHorizontal: 14
+  },
+  buttonDisabled: {
+    opacity: 0.5
   }
 })
 
