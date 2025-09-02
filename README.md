@@ -1,20 +1,20 @@
 # Little Lemon Restaurant App
 
-A React Native mobile application for Little Lemon, a family-owned Mediterranean restaurant in Chicago. This app allows customers to browse the menu, filter items, manage their profile, and place orders for delivery.
+A React Native mobile application for Little Lemon, a family-owned Mediterranean restaurant in Chicago. This app allows customers to browse the menu, filter items, manage their profile. This is fonal project assessment.
 
 ## Screenshots
 
 <div align="center">
   <div style="display: inline-block; margin: 0 10px;">
-    <img src="./assets/screen-home.png" width="250" alt="Home Screen"/>
+    <img src="./assets/screen-home.png" width="200" alt="Home Screen"/>
     <p align="center"><em>Home Screen</em></p>
   </div>
   <div style="display: inline-block; margin: 0 10px;">
-    <img src="./assets/screen-home-filter.png" width="250" alt="Filtered Menu"/>
+    <img src="./assets/screen-home-filter.png" width="200" alt="Filtered Menu"/>
     <p align="center"><em>Filtered Menu</em></p>
   </div>
   <div style="display: inline-block; margin: 0 10px;">
-    <img src="./assets/screen-profile.png" width="250" alt="Profile Management"/>
+    <img src="./assets/screen-profile.png" width="200" alt="Profile Management"/>
     <p align="center"><em>Profile Screen</em></p>
   </div>
 </div>
