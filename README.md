@@ -4,20 +4,25 @@ A React Native mobile application for Little Lemon, a family-owned Mediterranean
 
 ## Screenshots
 
-<div align="center">
-  <div style="display: inline-block; margin: 0 10px;">
-    <img src="./assets/screen-home.png" width="200" alt="Home Screen"/>
-    <p align="center"><em>Home Screen</em></p>
-  </div>
-  <div style="display: inline-block; margin: 0 10px;">
-    <img src="./assets/screen-home-filter.png" width="200" alt="Filtered Menu"/>
-    <p align="center"><em>Filtered Menu</em></p>
-  </div>
-  <div style="display: inline-block; margin: 0 10px;">
-    <img src="./assets/screen-profile.png" width="200" alt="Profile Management"/>
-    <p align="center"><em>Profile Screen</em></p>
-  </div>
-</div>
+<table>
+  <tr>
+    <td align="center">
+      <img src="./assets/screen-home.png" width="300" alt="Home Screen"/>
+      <br />
+      <em>Home Screen</em>
+    </td>
+    <td align="center">
+      <img src="./assets/screen-home-filter.png" width="300" alt="Filtered Menu"/>
+      <br />
+      <em>Filtered Menu</em>
+    </td>
+    <td align="center">
+      <img src="./assets/screen-profile.png" width="300" alt="Profile Management"/>
+      <br />
+      <em>Profile Screen</em>
+    </td>
+  </tr>
+</table>
 
 ## Features
 
