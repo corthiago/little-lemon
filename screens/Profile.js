@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
-  TextInput,
-  Image,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-import { MaskedTextInput } from 'react-native-mask-text';
 import { storage } from "../utils/storage";
 import Check from "../components/Check";
 import Avatar from "../components/Avatar";
+import InputText from "../components/InputText";
+import InputPhone from "../components/InputPhone";
 
 export default function Profile({navigation}) {
   const [profileData, setProfileData] = useState({
@@ -55,24 +56,24 @@ export default function Profile({navigation}) {
     }
   };
 
+  const handleDiscard = () => {
+    updateField('lastName', '');
+    updateField('phone', '')
+    updatePreferences('orderStatuses', false)
+    updatePreferences('passwordChanges', false)
+    updatePreferences('specialOffers', false)
+    updatePreferences('newsletter', false)
+  }
+
   useEffect(()=>{
     const loadProfile = async () => {
-      try {
-        const saved = await storage.getProfile();
-        if(saved) {
-          setProfileData(saved)
-        }
-      } catch(error) {
-        console.error('Failed to load profile', error)
+      const profile = await storage.getProfile();
+      if (profile) {
+        setProfileData(profile)
       }
     }
     loadProfile()
   }, [])
-
-  const isValidUSPhone = (value) => {
-    const digits = value.replace(/\D/g, "");
-    return /^\d{10}$/.test(digits);
-  };
 
   const handleLogout = async () => {
     try {
@@ -87,84 +88,88 @@ export default function Profile({navigation}) {
     }
   }
 
+  const getInitials = () => {
+    return `${profileData.firstName?.charAt(0) || ''}${profileData.lastName?.charAt(0) || ''}`
+  }
+
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.sectionTitle}>Personal information</Text>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView style={styles.container}>
+        <Text style={styles.sectionTitle}>Personal information</Text>
 
-      <Avatar 
-        uri={profileData.avatarUri}
-        onChangeImage={(value) => updateField('avatarUri', value)}
-        onRemoveImage={() => updateField('avatarUri', null)}
-      />
+        <Avatar 
+          uri={profileData.avatarUri}
+          onChangeImage={(value) => updateField('avatarUri', value)}
+          onRemoveImage={() => updateField('avatarUri', null)}
+          initials={getInitials()}
+        />
 
-      <TextInput
-        style={styles.input}
-        value={profileData.firstName}
-        onChangeText={(value) => updateField('firstName', value)}
-        placeholder="First name"
-      />
-      <TextInput
-        style={styles.input}
-        value={profileData.lastName}
-        onChangeText={(value) => updateField('lastName', value)}
-        placeholder="Last name"
-      />
-      <TextInput
-        style={styles.input}
-        value={profileData.email}
-        onChangeText={(value) => updateField('email', value)}
-        placeholder="Email"
-      />
+        <InputText
+          value={profileData.firstName}
+          onChangeText={(value) => updateField('firstName', value)}
+          label="First name"
+        />
 
-      <MaskedTextInput
-        value={profileData.phone}
-        onChangeText={(masked, unmasked) => {
-          updateField('phone', masked); // masked = (217) 555-0113
-        }}
-        mask="(999) 999-9999"
-        keyboardType="phone-pad"
-        placeholder="(217) 555-0113"
-        style={[
-          styles.inputPhone,
-          profileData.phone && !isValidUSPhone(profileData.phone) && { borderColor: "red" },
-        ]}
-      />
+        <InputText
+          value={profileData.lastName}
+          onChangeText={(value) => updateField('lastName', value)}
+          label="Last name"
+        />
+        
+        <InputText
+          value={profileData.email}
+          onChangeText={(value) => updateField('email', value)}
+          label="Email"
+          autoCapitalize="none"
+        />
 
-      <Text style={styles.subTitle}>Email notifications</Text>
-      <Check 
-        value={profileData.preferences?.orderStatuses}
-        onValueChange={(value) => updatePreferences('orderStatuses', value)}
-        label='Order Statuses'
-      />
-      <Check 
-        value={profileData.preferences?.passwordChanges}
-        onValueChange={(value) => updatePreferences('passwordChanges', value)}
-        label='Password Changes'
-      />
-      <Check 
-        value={profileData.preferences?.specialOffers}
-        onValueChange={(value) => updatePreferences('specialOffers', value)}
-        label='Special Offers'
-      />
-      <Check 
-        value={profileData.preferences?.newsletter}
-        onValueChange={(value) => updatePreferences('newsletter', value)}
-        label='Newsletter'
-      />
+        <InputPhone
+          value={profileData.phone}
+          onChangeText={(masked, unmasked) => {
+            updateField('phone', masked); // masked = (217) 555-0113
+          }}
+          label="Phone"
+        />
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Log out</Text>
-      </TouchableOpacity>
+        <Text style={styles.subTitle}>Email notifications</Text>
+        <Check 
+          value={profileData.preferences?.orderStatuses}
+          onValueChange={(value) => updatePreferences('orderStatuses', value)}
+          label='Order Statuses'
+        />
+        <Check 
+          value={profileData.preferences?.passwordChanges}
+          onValueChange={(value) => updatePreferences('passwordChanges', value)}
+          label='Password Changes'
+        />
+        <Check 
+          value={profileData.preferences?.specialOffers}
+          onValueChange={(value) => updatePreferences('specialOffers', value)}
+          label='Special Offers'
+        />
+        <Check 
+          value={profileData.preferences?.newsletter}
+          onValueChange={(value) => updatePreferences('newsletter', value)}
+          label='Newsletter'
+        />
 
-      <View style={styles.bottomButtons}>
-        <TouchableOpacity style={styles.discardButton}>
-          <Text style={styles.discardText}>Discard changes</Text>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutButtonText}>Log out</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveText}>Save changes</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+
+        <View style={styles.bottomButtons}>
+          <TouchableOpacity style={styles.discardButton} onPress={handleDiscard}>
+            <Text style={styles.discardText}>Discard changes</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <Text style={styles.saveText}>Save changes</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -224,11 +229,4 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   saveText: { color: "#fff" },
-  inputPhone: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 8,
-  },
 });

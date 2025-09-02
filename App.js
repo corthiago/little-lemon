@@ -6,28 +6,25 @@ import Profile from './screens/Profile';
 import Splash from './screens/Splash';
 import Home from './screens/Home';
 import Header from './components/Header'
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SQLiteProvider } from 'expo-sqlite';
-import { initDb } from './database';
+import { initDb } from './utils/database';
+import { storage } from './utils/storage';
 
 export default function App() {
-  const Stack = createNativeStackNavigator();
   
   const [appState, setAppState] = useState({
     isLoading: true,
     isOnboardingCompleted: false,
     avatarUri: null
   })
-
+  
   const loadUserData = useCallback(async () => {
     try {
-      const storedProfileData = await AsyncStorage.getItem("profileData")
-      if(storedProfileData) {
-        const userProfile = JSON.parse(storedProfileData)
+      const profile = await storage.getProfile()
+      if(profile) {
         setAppState(prev=>({
           ...prev,
           isOnboardingCompleted: true,
-          userProfile,
           isLoading:  false
         }))
       } else {
@@ -44,42 +41,45 @@ export default function App() {
       }))
     }
   }, [])
-
+  
   useEffect(()=>{
     loadUserData()
   },[loadUserData])
-
+  
   if(appState.isLoading) {
     return <Splash />
   }
-
+  
+  const Stack = createNativeStackNavigator();
+  
   return (
     <SQLiteProvider databaseName="little_lemon.db" onInit={initDb}>
       <NavigationContainer>  
-        <Stack.Navigator initialRouteName={appState.isOnboardingCompleted ? "Home" : "Onboarding"}>
+        <Stack.Navigator 
+          initialRouteName={appState.isOnboardingCompleted ? "Home" : "Onboarding"}
+          screenOptions={{
+            headerBackVisible: false
+          }}
+        >
           <Stack.Screen 
             name="Home" 
-            component={Home} 
+            component={Home}
             options={({ navigation }) => ({
-              headerLeft: () => null,
               headerTitle: () => <Header navigation={navigation} />,
-              headerStyle: { backgroundColor: "blue" },
-            })}  
+            })}
           />
           <Stack.Screen 
             name="Onboarding" 
             component={Onboarding}
             options={{
-              headerShown: false, // This will hide the entire header
+              headerShown: false,
             }}
           />
           <Stack.Screen 
             name='Profile' 
             component={Profile} 
             options={({ navigation }) => ({
-              headerLeft: () => null,
               headerTitle: () => <Header navigation={navigation} />,
-              headerStyle: { backgroundColor: "blue" },
             })}
           />
         </Stack.Navigator>

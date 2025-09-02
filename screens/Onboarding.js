@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { View, Text, Button, TextInput, Alert, StyleSheet, Image, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, Text, ScrollView, TextInput, Alert, StyleSheet, Image, Pressable, KeyboardAvoidingView, Platform } from 'react-native'
 import logo from '../assets/little-lemon-logo-grey.png'
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { storage } from '../utils/storage';
+import { validadeName, validadeEmail } from '../utils/validation';
 
 const Onboarding = () => {
   const [firstName, setFirstName] = useState('');
@@ -28,7 +29,7 @@ const Onboarding = () => {
         isOnboardingCompleted: true
       };
 
-      await AsyncStorage.setItem('profileData', JSON.stringify(profileData));
+      await storage.saveProfile( profileData)
       
       navigation.navigate("Home")
       
@@ -43,70 +44,64 @@ const Onboarding = () => {
     return false
   }
 
-  const validadeEmail = (email) => {
-    return email.match(/.+@.+\./);
-  }
-
-  const validadeName = (name) =>{
-    return name.match(/^[A-Za-z\s]+$/)
-  }
-
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Little Lemon</Text>
-          <Image source={logo} resizeMode='contain' style={styles.logo}/>
-        </View>
-        <View style={[styles.section]}>
-          <Text style={styles.headingText}>Let us get to know you</Text>
-          <Text style={styles.inputTitle}>First Name</Text>
-          <TextInput
-            style={styles.inputText}
-            onChangeText={setFirstName}
-            value={firstName}
-          />
-          <Text style={styles.inputTitle}>Email</Text>
-          <TextInput
-            style={styles.inputText}
-            onChangeText={setEmail}
-            value={email}
-            keyboardType='email-address'
-            autoCapitalize='none'
-          />
-        </View>
-        <View style={styles.footer}>
-          <Pressable
-            style={[styles.button, isButtonDisabled() && styles.buttonDisabled]}
-            title='next'
-            onPress={handlePress}
-            disabled={isButtonDisabled()}
-          >
-            <Text style={styles.buttonText}>Next</Text>
-          </Pressable>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <SafeAreaView style={{flex: 1}}>
+        <ScrollView style={styles.safeArea}>
+          <View style={styles.header}>
+            <Text style={styles.headerText}>Little Lemon</Text>
+            <Image source={logo} resizeMode='contain' style={styles.logo}/>
+          </View>
+          <View style={[styles.section]}>
+            <Text style={styles.headingText}>Let us get to know you</Text>
+            <Text style={styles.inputTitle}>First Name</Text>
+            <TextInput
+              style={styles.inputText}
+              onChangeText={setFirstName}
+              value={firstName}
+            />
+            <Text style={styles.inputTitle}>Email</Text>
+            <TextInput
+              style={styles.inputText}
+              onChangeText={setEmail}
+              value={email}
+              keyboardType='email-address'
+              autoCapitalize='none'
+            />
+          </View>
+          <View style={styles.footer}>
+            <Pressable
+              style={[styles.button, isButtonDisabled() && styles.buttonDisabled]}
+              title='next'
+              onPress={handlePress}
+              disabled={isButtonDisabled()}
+            >
+              <Text style={styles.buttonText}>Next</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   )
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#edefee'
-  },
-  container: {
-    flex: 1
   },
   header:{
     padding: 20,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#edefee'
+    backgroundColor: '#edefee',
   },
   headerText: {
     fontSize: 26,
@@ -119,10 +114,11 @@ const styles = StyleSheet.create({
     marginLeft: 10
   },
   section: {
-    flex:3,
+    flex:1,
     alignItems: 'center', 
     justifyContent: 'center',
     backgroundColor: '#495e57',
+    paddingVertical: 100
   },
   headingText: {
     paddingBottom: 100,

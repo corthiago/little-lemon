@@ -18,10 +18,15 @@ const Header = ({ navigation }) => {
 
   return (
     <View style={styles.headerContainer}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.left}>
-        <Text style={{ fontSize: 18 }}>←</Text>
-      </TouchableOpacity>
-
+      {
+        navigation.canGoBack() ? (
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.left}>
+            <Text style={{ fontSize: 22 }}>←</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.left} />
+        )
+      }
       <View style={styles.center}>
         <Image
           source={logo}
@@ -47,9 +52,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    // width: "100%",
-    // flex: 1,
-    backgroundColor: "red"
   },
   left: { flex: 1, alignItems: "flex-start" },
   center: { flex: 3, flexDirection: "row", alignItems: "center", justifyContent: "center" },

@@ -6,139 +6,86 @@ import {
   Image,
   StyleSheet,
   FlatList,
-  TouchableOpacity,
   ActivityIndicator,
   TextInput,
 } from "react-native";
 import Filters from "../components/Filters";
-import {queryByCategories, queryByCategoriesAndSearch} from '../database';
+import {queryByCategoriesAndSearch, queryMenu, deleteMenu, insertMenu, getUniqueCategories} from '../utils/database';
+import { fetchMenu } from '../utils/api';
+import { MenuItem } from "../components/MenuItem";
+import restaurant from '../assets/restaurant.png'
 
 const Home = () => {
-
-  const sections = ["Starters", "Mains", "Desserts", "Drinks"]
 
   const db = useSQLiteContext();
   const [menuData, setMenuData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sections, setSections] = useState([])
+  
   const [filterSelections, setFilterSelections] = useState(
     sections.map(() => false)
   );
   const [search, setSearch] = useState('');
-
-  // Initialize table and load data
+  
   useEffect(() => {
-    const initDb = async () => {
+    const loadData = async () => {
       try {
-        // Create table if it doesn't exist
-        await db.execAsync(`
-          CREATE TABLE IF NOT EXISTS menu (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            description TEXT,
-            price TEXT,
-            image TEXT,
-            category TEXT
-          );
-        `);
-
-        // Check if we have data in the database
-        const result = await db.getAllAsync("SELECT * FROM menu");
-        console.log('result', result)
+        const result = await queryMenu(db);
         
         if (result.length > 0) {
-          // Data exists in database, use it
           console.log('Loading data from database');
           setMenuData(result);
-          setLoading(false);
+          setSections([...new Set(result.map(item => item.category))])
         } else {
-          // No data in database, fetch from API
           console.log('No data in database, fetching from API');
-          await fetchMenuData();
+          const menu = await fetchMenu();
+          setMenuData(menu);
+          setSections([...new Set(result.map(item => item.category))])
+          await insertMenu(db, menu);
         }
+        const categories = await getUniqueCategories(db)
+        setSections(categories) 
       } catch (err) {
-        console.error("DB Init Error:", err);
-        await fetchMenuData();
+        console.error("Data loading error:", err);
+      } finally {
+        setLoading(false);
       }
     };
-
-    initDb();
+    
+    loadData();
   }, []);
-
-  const fetchMenuData = async () => {
-    try {
-      console.log('Fetching data from API');
-      const response = await fetch(
-        "https://raw.githubusercontent.com/Meta-Mobile-Developer-PC/Working-With-Data-API/main/capstone.json"
-      );
-      const json = await response.json();
-      const items = json.menu;
-      
-      // Update state with API data
-      setMenuData(items);
-
-      try {
-        // Store in database
-        await db.runAsync("DELETE FROM menu");
-        
-        for (const item of items) {
-          await db.runAsync(
-            "INSERT INTO menu (name, description, price, image, category) VALUES (?, ?, ?, ?, ?)",
-            [item.name, item.description, item.price, item.image, item.category]
-          );
-        }
-        console.log('Data stored in database successfully');
-      } catch (dbError) {
-        console.error("Database storage error:", dbError);
-      }
-    } catch (err) {
-      console.error("API fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleFiltersChange = async (index) => {
       const arrayCopy = [...filterSelections];
       arrayCopy[index] = !filterSelections[index];
       setFilterSelections(arrayCopy);
       
-      // Get active categories
       const activeCategories = sections.filter((_, idx) => arrayCopy[idx]);
       await updateMenuItems(activeCategories, search);
   };
 
-  // Add this new function to handle menu updates
   const updateMenuItems = async (activeCategories, searchText) => {
-    try {
-        if (activeCategories.length > 0 || searchText) {
-            const result = await queryByCategoriesAndSearch(db, activeCategories, searchText);
-            setMenuData(result);
-        } else {
-            // If no filters and no search, show all items
-            const result = await db.getAllAsync("SELECT * FROM menu");
-            setMenuData(result);
-        }
-    } catch (error) {
-        console.error("Error updating menu items:", error);
+    if (activeCategories.length > 0 || searchText) {
+        const result = await queryByCategoriesAndSearch(db, activeCategories, searchText);
+        setMenuData(result);
+    } else {
+        const result = await queryMenu(db);
+        setMenuData(result);
     }
   };
 
-    // Update the handleSearchChange function
-    const handleSearchChange = (text) => {
-        setSearch(text);
-        debouncedSearch(text);
-    };
+  const handleSearchChange = (text) => {
+      setSearch(text);
+      debouncedSearch(text);
+  };
 
-    // Update the lookup callback
-    const lookup = useCallback(async (searchText) => {
-        setSearch(searchText);
-        const activeCategories = sections.filter((_, idx) => filterSelections[idx]);
-        await updateMenuItems(activeCategories, searchText);
-    }, [filterSelections, sections]);
+  const lookup = useCallback(async (searchText) => {
+      setSearch(searchText);
+      const activeCategories = sections.filter((_, idx) => filterSelections[idx]);
+      await updateMenuItems(activeCategories, searchText);
+  }, [filterSelections, sections]);
 
-    // Update the debounced function
-    const debouncedSearch = useMemo(() => debounce(lookup, 500), [lookup]);
-
+  const debouncedSearch = useMemo(() => debounce(lookup, 500), [lookup]);
 
   function debounce(fn, delay) {
     let timer;
@@ -148,28 +95,9 @@ const Home = () => {
     };
   }
 
-
-  const renderItem = ({ item }) => (
-    <View style={styles.item}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.itemTitle}>{item.name}</Text>
-        <Text style={styles.itemDesc} numberOfLines={2}>
-          {item.description}
-        </Text>
-        <Text style={styles.itemPrice}>{item.price}</Text>
-      </View>
-      <Image
-        source={{
-          uri: `https://github.com/Meta-Mobile-Developer-PC/Working-With-Data-API/blob/main/images/${item.image}?raw=true`,
-        }}
-        style={styles.itemImage}
-      />
-    </View>
-  );
-
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#495E57" />
         <Text>Loading menu...</Text>
       </View>
@@ -178,14 +106,23 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Little Lemon</Text>
-        <Text style={styles.subtitle}>Chicago</Text>
-        <Text style={styles.headerDesc}>
-          We are a family owned Mediterranean restaurant, focused on traditional
-          recipes served with a modern twist.
-        </Text>
+        <View style={styles.headerRow}>
+          <View style={styles.headerContent}>
+            <Text style={styles.title}>Little Lemon</Text>
+            <Text style={styles.subtitle}>Chicago</Text>
+            <Text style={styles.headerDesc}>
+              We are a family owned Mediterranean restaurant, focused on traditional
+              recipes served with a modern twist.
+            </Text>
+          </View>
+          <View style={styles.imageContainer}>
+            <Image 
+              source={restaurant}
+              style={styles.headerImage}
+            />
+          </View>
+        </View>
         <TextInput 
           style={styles.input}
           value={search}
@@ -195,15 +132,7 @@ const Home = () => {
         />
       </View>
 
-      {/* Menu Section */}
       <Text style={styles.sectionTitle}>ORDER FOR DELIVERY!</Text>
-      {/* <View style={styles.tabs}>
-        {["Starters", "Mains", "Desserts", "Drinks"].map((tab) => (
-          <TouchableOpacity key={tab} style={styles.tabButton}>
-            <Text style={styles.tabText}>{tab}</Text>
-          </TouchableOpacity>
-        ))}
-      </View> */}
 
       <Filters
         selections={filterSelections}
@@ -213,7 +142,7 @@ const Home = () => {
 
       <FlatList
         data={menuData}
-        renderItem={renderItem}
+        renderItem={({item}) => <MenuItem item={item} />}
         keyExtractor={(item) => item.image}
         ItemSeparatorComponent={() => <View style={styles.separator} />}
       />
@@ -227,11 +156,36 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     padding: 16,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
+  },
   header: {
     backgroundColor: "#495E57",
     padding: 16,
     borderRadius: 12,
     marginBottom: 20,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 20,
+  },
+  headerContent: {
+    flex: 2,
+    justifyContent: 'center',
+  },
+  imageContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerImage: {
+    width: '100%',
+    height: 140,
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 28,
@@ -247,6 +201,7 @@ const styles = StyleSheet.create({
   headerDesc: {
     fontSize: 14,
     color: "white",
+    lineHeight: 20
   },
   input: {
     borderWidth: 1,
@@ -261,49 +216,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 12,
-  },
-  tabs: {
-    flexDirection: "row",
-    marginBottom: 12,
-  },
-  tabButton: {
-    backgroundColor: "#EDEFEE",
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    marginRight: 10,
-  },
-  tabText: {
-    fontSize: 14,
-    color: "#495E57",
-    fontWeight: "600",
-  },
-  item: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  itemTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 4,
-    color: "#333",
-  },
-  itemDesc: {
-    fontSize: 14,
-    color: "#495E57",
-    marginBottom: 4,
-  },
-  itemPrice: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-  },
-  itemImage: {
-    width: 70,
-    height: 70,
-    marginLeft: 10,
-    borderRadius: 8,
   },
   separator: {
     height: 1,

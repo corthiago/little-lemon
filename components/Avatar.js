@@ -1,9 +1,7 @@
 import * as ImagePicker from "expo-image-picker";
 import { StyleSheet, View, TouchableOpacity, Text, Image } from "react-native";
-import { storage } from "../utils/storage";
-import { useState } from "react";
-import {getProfileNameInitials} from '../utils/utils'
-export default Avatar = ({uri, onChangeImage, onRemoveImage}) => {
+
+export default Avatar = ({uri, onChangeImage, onRemoveImage, initials=''}) => {
   const pickImage = async () => {
     const {granted} = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!granted) {
@@ -23,18 +21,13 @@ export default Avatar = ({uri, onChangeImage, onRemoveImage}) => {
     }
   }
 
-  const getInitials = async () => {
-    const {firstName, lastName} = await storage.getProfile()
-    return `${firstName?.charAt(0) || ''}${lastName?.charAt(0) || ''}`
-  }
-
   return (
     <View style={styles.avatarRow}>
       {uri ? (
         <Image source={{ uri }} style={styles.avatar} />
       ) : (
         <View style={styles.initialsCircle}>
-          <Text style={styles.initialsText}>{getProfileNameInitials()}</Text>
+          <Text style={styles.initialsText}>{initials}</Text>
         </View>
       )}
 
