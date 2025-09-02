@@ -10,6 +10,7 @@ const Header = ({ navigation }) => {
   useEffect(()=> {
     const profile  = async () => {
       const profile = await storage.getProfile();
+      console.log('profile', profile)
       setProfile(profile)
     }
 
