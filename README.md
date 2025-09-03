@@ -2,6 +2,10 @@
 
 A React Native mobile application for Little Lemon, a family-owned Mediterranean restaurant in Chicago. This app allows customers to browse the menu, filter items and manage their profile. This is a final project assessment.
 
+## Figma Wireframe
+<img src="./assets/wireframe.jpg" width="300" alt="Figma Wireframe"/>
+
+[Link](https://www.figma.com/proto/b4hOmnSQ3L33nsqoCRHKCg/Wireframe-Capstone?node-id=0-1&t=yu8uChqIZloToR7d-1)
 ## Screenshots
 
 <table>
