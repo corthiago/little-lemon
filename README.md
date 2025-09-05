@@ -6,6 +6,7 @@ A React Native mobile application for Little Lemon, a family-owned Mediterranean
 <img src="./assets/wireframe.jpg" width="300" alt="Figma Wireframe"/>
 
 [Link](https://www.figma.com/proto/b4hOmnSQ3L33nsqoCRHKCg/Wireframe-Capstone?node-id=0-1&t=yu8uChqIZloToR7d-1)
+
 ## Screenshots
 
 <table>
@@ -30,16 +31,15 @@ A React Native mobile application for Little Lemon, a family-owned Mediterranean
 
 ## Features
 
-- **User Authentication & Profile Management**
+- **Profile Management**
   - Personal information storage
   - Avatar image upload
   - Preferences management
-  - Email notifications settings
 
 - **Menu Management**
-  - Dynamic menu items loading
+  - Dynamic menu items loading using SQLite database queries
   - Category-based filtering (Starters, Mains, Desserts)
-  - Search functionality
+  - Search functionality 
   - Real-time menu updates
 
 - **UI/UX**
